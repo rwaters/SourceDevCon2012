@@ -1,0 +1,3 @@
+[submodule "calc"]
+	path = calc
+	url = git@github.com:rwaters/extjs-ux-calc.git
