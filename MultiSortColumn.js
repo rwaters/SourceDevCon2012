@@ -15,7 +15,7 @@ Ext.define('Ext.ux.grid.column.MultiSortTemplateColumn', {
     initComponent: function() {
         var me = this;
         me.renderTpl = [
-            '<div class="' + Ext.baseCSSPrefix + 'column-header-inner">', 
+            '<div id="{id}-titleEl" class="' + Ext.baseCSSPrefix + 'column-header-inner">', 
                 '<tpl for="text">', 
                     '<span class="', 
                     '<tpl if="this.getDataIndex()==dataIndex">', 
@@ -29,25 +29,26 @@ Ext.define('Ext.ux.grid.column.MultiSortTemplateColumn', {
                         '{name}', 
                     '</span><br/>', 
                 '</tpl>', 
-                '<tpl if="!values.menuDisabled"><div class="' + Ext.baseCSSPrefix + 'column-header-trigger"></div></tpl>', 
+                '<tpl if="!values.menuDisabled">',
+                    '<div class="' + Ext.baseCSSPrefix + 'column-header-trigger"></div>',
+                '</tpl>', 
             '</div>',
+            '{%this.renderContainer(out,values)%}',
         {
             getDataIndex: function() {
                 return me.dataIndex;
             }
         }];
 
-        Ext.applyIf(me.renderSelectors, {
-            titleContainer: '.' + Ext.baseCSSPrefix + 'column-header-inner',
-            triggerEl: '.' + Ext.baseCSSPrefix + 'column-header-trigger',
-            textEl: '.' + Ext.baseCSSPrefix + 'column-header-text'
-        });
 
         me.callParent();
-        // remove all childEls, we will use renderSelectors instead since we need multiples and don't want to deal with ID mess
-        // this is used as a 'filter' style func, returning false always will strip all
-        me.removeChildEls(function() {
-            return false;
+
+        me.removeChildEls(function(childEl) {
+            return childEl == 'textEl';
+        });
+        me.addChildEls({
+            name: 'textEl',
+            select: '.' + Ext.baseCSSPrefix + 'column-header-text'
         });
     },
 
@@ -76,27 +77,39 @@ Ext.define('Ext.ux.grid.column.MultiSortTemplateColumn', {
         }
     },
 
-    // Override to remove excess top padding, rest is the same
     setPadding: function(headerHeight) {
-        var me         = this,
-            lineHeight = Ext.util.TextMetrics.measure(me.textEl.dom, me.text).height;
+        var me = this,
+            lineHeight = parseInt(me.textEl.getStyle('line-height'), 10),
+            // textHeight = me.textEl.dom.offsetHeight,
+            titleEl = me.titleEl,
+            availableHeight = headerHeight - me.el.getBorderWidth('tb'),
+            titleElHeight;
 
-
+        // Top title containing element must stretch to match height of sibling group headers
         if (!me.isGroupHeader) {
-            if (me.titleContainer.getHeight() < headerHeight) {
-                me.titleContainer.dom.style.height = headerHeight + 'px';
+            if (titleEl.getHeight() < availableHeight) {
+                titleEl.setHeight(availableHeight);
+                // the column el's parent element (the 'innerCt') may have an incorrect height
+                // at this point because it may have been shrink wrapped prior to the titleEl's
+                // height being set, so we need to sync it up here
+                me.ownerCt.layout.innerCt.setHeight(headerHeight);
             }
         }
-        headerHeight = me.titleContainer.getViewSize().height;
+        titleElHeight = titleEl.getViewSize().height;
 
-        // scrap the top padding as we need room
-        // if (lineHeight) {
-        //     me.titleContainer.setStyle({
-        //         paddingTop: Math.max(((headerHeight - lineHeight) / 2), 0) + 'px'
+        // Vertically center the header text in potentially vertically stretched header
+        // if (textHeight) {
+        //     if(lineHeight) {
+        //         textHeight = Math.ceil(textHeight / lineHeight) * lineHeight;
+        //     }
+        //     titleEl.setStyle({
+        //         paddingTop: Math.floor(Math.max(((titleElHeight - textHeight) / 2), 0)) + 'px'
         //     });
         // }
+
+        // Only IE needs this
         if (Ext.isIE && me.triggerEl) {
-            me.triggerEl.setHeight(headerHeight);
+            me.triggerEl.setHeight(titleElHeight);
         }
-    },
+    }
 });

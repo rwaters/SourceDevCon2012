@@ -27,7 +27,13 @@ Ext.onReady(function() {
                 name: 'Session',
                 dataIndex: 'session'
             }],
-            tpl: ['{company}<br/>', '<tpl if="twitter">', '<a href="http://twitter.com/{twitter}">http://twitter.com/{twitter}</a><br/>', '</tpl>', '{session}']
+            tpl: [
+                '{company}<br/>',
+                '<tpl if="twitter">',
+                    '<a href="http://twitter.com/{twitter}">http://twitter.com/{twitter}</a><br/>',
+                '</tpl>',
+                '{session}'
+            ]
         }]
     });
 });
